@@ -35,8 +35,31 @@ template <class TPara>
 class GenSignal
 {
 private:
-    std::vector<GenSlotBase<TPara>*> signal;
+    std::vector<GenSlotBase<TPara>*> vSignal;
+public:
+    template <class TReceiver>
+    void addSlot(TReceiver * pObj, void (TReceiver::*func)(TPara para)){
+        vSignal.push_back(new GenSlot<TReceiver, TPara>(pObj, func));
+    }
+
+    void operator()(TPara para){
+        for(GenSlotBase<TPara>* it : vSignal){
+            it->slotFunction(para);
+        }
+    }
+
+    template <class TReceiver>
+    void removeSlot(TReceiver * pObj){
+        for(auto it = vSignal.begin(); it != vSignal.end();){
+            if(dynamic_cast<GenSlot<TReceiver, TPara>*>(*it)){
+                it = vSignal.erase(it);
+            }else{
+                it++;
+            }
+        }
+    }
 };
 
+#define GenConnect(sender, signal, receiver, method) (sender)->signal.addSlot(receiver, method)
 
 #endif // GENOBSERVER_H
